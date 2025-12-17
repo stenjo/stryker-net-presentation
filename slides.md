@@ -58,88 +58,62 @@ teamlead and
 DevOps trainer
 -->
 
----
-layout: default
-transition: slide-up
----
-
-
-# Erlend Lunde
-
-A geek who loves spending his spare time in front of a computer or immersed in a good fantasy book.
-
-- **Bouvet** - Joined in 2023 as a full-stack developer for Team Epilogue
-![Erlend](/images/Erlend_Lunde.jpg) {width=200px margin=30px align=right}
-
-- **Experience** - Graduated in winter 2022 with a Bachelor's degree in Digital Culture. Started at Bouvet fresh out of the classroom.
-  
-- **Roles** - Programmer, bug squasher
-
-- **Busy with** - Writing testable code, and writing tests
-
-
-
 
 ---
 layout: image-right
-image: images/DORA-action.png
+image: images/LocationService.png
 backgroundSize: contain
 ---
 
-# devops-metrics-action
-
+# Consider some example code (LocationService.cs)
 <v-click>
 
-A gihub action that calculates DORA key metrics based
-on Issues, PR's and releaseses in one or more github
-repositories.
+A backend service that handles Locations
 
 </v-click>
 
 <v-clicks>
 
-- implemented in typescript<br/>
-- 100% test coverage<br/>
+- implemented in C# .NET<br/>
+- 92% test coverage<br/>
 
 </v-clicks>
 
 <v-after>
 
-![test coverage](/images/test-coverage.png)
+![test coverage](/images/LocationService-coverage.png)
 
 </v-after>
 
 <!--
-[click] Consider this GitHub action - a plugin for calculating DORA metrics based on the issues, releases and commits to one or more repositories
-
-[click] Is entirely coded in Typescript
+[click] Consider this backend endpoint handling Heats
+[click] Is entirely coded in C#
 
 [click] 100% test coverage. Not only on 
 
 - lines, but also 
 - statements, 
-- functons and
+- functions and
 - branches
 -->
 
 ---
 layout: image-right
-image: images/LeadTimeTest.png
+image: images/LocationService.png
 ---
 
-# LeadTime
+# LocationService
 
-Lets consider the LeadTime module,
-having a automated component tests
-in `LeadTime.test.ts` test suite.
+Lets consider the complete LocationService/LocationService.cs
+having automated xUnit tests
+in `LocationServiceShould.cs` test suite.
 
 <v-clicks>
 
-- more than 740 lines of code<br/>
-- (probably too big)<br/>
-- 19 tests<br/>
-- Provides 100% test coverage<br/>
-![LeadTime test log](/images/LeadTime-test-log.png)
+- 1040 lines of code<br/>
+- 77 tests<br/>
+- Provides 92% test coverage<br/>
+![LocationService test log](/images/LocationService-test-log.png)
 
 </v-clicks>
 
@@ -151,182 +125,122 @@ How do we know these tests are good?<br/>
 </v-click>
 
 <!--
-The leadTime module calculates the Lead time for changes by the team. Time is an average for changes over the last two months, calculated as the time between the first commit on the issue until the change is in production.
+The LocationService provides a set of services to return heats by filters and other related data connected to the Heats
 
-[click] The LeadTime module has automated tests implemented in LeadTime.test.ts - a file with more than 740 lines of code.
+[click] The LocationService service has automated tests implemented in LocationServiceShould.cs - a file with more than 580 lines of code.
 
-[click] Probably too big
-[click] but contains 19 tests altogether
+[click] contains 77 tests altogether
 
-[click] As the overall program, this test suite also provide 100% test coverage.
+[click] This test suite provides 92% test coverage.
 
 [click] But are we sure the tests are reliable and will let us know if we later on introduce bugs in the code?
 -->
 
 ---
 
-# LeadTime.ts
+# LocationService.cs
 
-Lets test our tests to see how waterthight our testing is by considering a few lines of code in the LeadTime module:<br/>
+Lets test our tests to see how waterthight our testing is by considering a few lines of code with 100% test coverage in the LocationService module:<br/>
 > How many bugs can we introduce and still have all tests passing?
 
 <v-click>
 
 ````md magic-move {lines: true}
-```ts {*|6-11}{lines:true,startLine:2}
+```cs {*|13}{lines:true,startLine:29}
 // code
-  getLog(): string[] {
-    return this.log
+  if (context != null && search.ProjectIds.Count > 0 && !search.allProjects)
+  {
+      var locationIds = context.Pipes
+          .Where(p => search.ProjectIds.Contains(p.ProjectId) && p.CurrLocation != null)
+          .Select(p => p.CurrLocation != null ? p.CurrLocation.Id : Guid.Empty)
+          .Distinct()
+          .ToList();
+      query = query.Where(x => locationIds.Contains(x.Id));
   }
-  async getLeadTime(filtered = false): Promise<number> {
-    if (this.pulls.length === 0 || this.releases.length === 0) {
-      return 0
-    }
+  if (!string.IsNullOrEmpty(search.UpdatedDatetime) && DateTime.TryParse(search.UpdatedDatetime, out var updatedSince))
+  {
+      query = query.Where(q => q.UpdatedDatetime != null && q.UpdatedDatetime >= updatedSince);
+  }
 
-    if (filtered) {
-      this.log.push(`\nLog is filtered - only feat and fix.`)
-    }
 ```
 
 <Arrow x1="10" y1="20" x2="100" y2="200" />
 
-```ts {6}
+```cs {13}
 // bug 1
-  getLog(): string[] {
-    return this.log
+  if (context != null && search.ProjectIds.Count > 0 && !search.allProjects)
+  {
+      var locationIds = context.Pipes
+          .Where(p => search.ProjectIds.Contains(p.ProjectId) && p.CurrLocation != null)
+          .Select(p => p.CurrLocation != null ? p.CurrLocation.Id : Guid.Empty)
+          .Distinct()
+          .ToList();
+      query = query.Where(x => locationIds.Contains(x.Id));
   }
-  async getLeadTime(filtered = false): Promise<number> {
-    if (false) {
-      return 0
-    }
-
-    if (filtered) {
-      this.log.push(`\nLog is filtered - only feat and fix.`)
-    }
+  if (!string.IsNullOrEmpty(search.UpdatedDatetime) && DateTime.TryParse(search.UpdatedDatetime, out var updatedSince))
+  {
+      query = query.Where(q => q.UpdatedDatetime != null || q.UpdatedDatetime >= updatedSince);
+  }
 ```
 
-```ts {6}
+```cs {13}
 // bug 2
-  getLog(): string[] {
-    return this.log
+  if (context != null && search.ProjectIds.Count > 0 && !search.allProjects)
+  {
+      var locationIds = context.Pipes
+          .Where(p => search.ProjectIds.Contains(p.ProjectId) && p.CurrLocation != null)
+          .Select(p => p.CurrLocation != null ? p.CurrLocation.Id : Guid.Empty)
+          .Distinct()
+          .ToList();
+      query = query.Where(x => locationIds.Contains(x.Id));
   }
-  async getLeadTime(filtered = false): Promise<number> {
-    if (false || this.releases.length === 0) {
-      return 0
-    }
-
-    if (filtered) {
-      this.log.push(`\nLog is filtered - only feat and fix.`)
-    }
+  if (!string.IsNullOrEmpty(search.UpdatedDatetime) && DateTime.TryParse(search.UpdatedDatetime, out var updatedSince))
+  {
+      query = query.Where(q => q.UpdatedDatetime == null && q.UpdatedDatetime >= updatedSince);
+  }
 ```
 
-```ts {6}
+```cs {13}
 // bug 3
-  getLog(): string[] {
-    return this.log
+  if (context != null && search.ProjectIds.Count > 0 && !search.allProjects)
+  {
+      var locationIds = context.Pipes
+          .Where(p => search.ProjectIds.Contains(p.ProjectId) && p.CurrLocation != null)
+          .Select(p => p.CurrLocation != null ? p.CurrLocation.Id : Guid.Empty)
+          .Distinct()
+          .ToList();
+      query = query.Where(x => locationIds.Contains(x.Id));
   }
-  async getLeadTime(filtered = false): Promise<number> {
-    if (this.pulls.length === 0 && this.releases.length === 0) {
-      return 0
-    }
-
-    if (filtered) {
-      this.log.push(`\nLog is filtered - only feat and fix.`)
-    }
+  if (!string.IsNullOrEmpty(search.UpdatedDatetime) && DateTime.TryParse(search.UpdatedDatetime, out var updatedSince))
+  {
+      query = query.Where(q => q.UpdatedDatetime != null && q.UpdatedDatetime > updatedSince);
+  }
 ```
 
-```ts {6}
+```cs {13}
 // bug 4
-  getLog(): string[] {
-    return this.log
+  if (context != null && search.ProjectIds.Count > 0 && !search.allProjects)
+  {
+      var locationIds = context.Pipes
+          .Where(p => search.ProjectIds.Contains(p.ProjectId) && p.CurrLocation != null)
+          .Select(p => p.CurrLocation != null ? p.CurrLocation.Id : Guid.Empty)
+          .Distinct()
+          .ToList();
+      query = query.Where(x => locationIds.Contains(x.Id));
   }
-  async getLeadTime(filtered = false): Promise<number> {
-    if (this.pulls.length === 0 || false) {
-      return 0
-    }
-
-    if (filtered) {
-      this.log.push(`\nLog is filtered - only feat and fix.`)
-    }
-```
-
-```ts {6}
-// bug 5
-  getLog(): string[] {
-    return this.log
+  if (!string.IsNullOrEmpty(search.UpdatedDatetime) && DateTime.TryParse(search.UpdatedDatetime, out var updatedSince))
+  {
+      query = query.Where(q => q.UpdatedDatetime != null && q.UpdatedDatetime < updatedSince);
   }
-  async getLeadTime(filtered = false): Promise<number> {
-    if (this.pulls.length === 0 || this.releases.length === 0) {}
-
-    if (filtered) {
-      this.log.push(`\nLog is filtered - only feat and fix.`)
-    }
-```
-
-```ts {10}
-// bug 6
-  getLog(): string[] {
-    return this.log
-  }
-  async getLeadTime(filtered = false): Promise<number> {
-    if (this.pulls.length === 0 || this.releases.length === 0) {
-      return 0
-    }
-
-    if (true) {
-      this.log.push(`\nLog is filtered - only feat and fix.`)
-    }
-```
-
-```ts {10}
-// bug 7
-  getLog(): string[] {
-    return this.log
-  }
-  async getLeadTime(filtered = false): Promise<number> {
-    if (this.pulls.length === 0 || this.releases.length === 0) {
-      return 0
-    }
-
-    if (false) {
-      this.log.push(`\nLog is filtered - only feat and fix.`)
-    }
-```
-
-```ts {10}
-// bug 8
-  getLog(): string[] {
-    return this.log
-  }
-  async getLeadTime(filtered = false): Promise<number> {
-    if (this.pulls.length === 0 || this.releases.length === 0) {
-      return 0
-    }
-
-    if (filtered) {}
-```
-
-```ts {*}
-// bug 8
-  getLog(): string[] {
-    return this.log
-  }
-  async getLeadTime(filtered = false): Promise<number> {
-    if (this.pulls.length === 0 || this.releases.length === 0) {
-      return 0
-    }
-
-    if (filtered) {
-      this.log.push(`\nLog is filtered - only feat and fix.`)
-    }
 ```
 
 ````
+
 </v-click>
 
 <v-click>
 
-- 8 possible bugs in 6 lines of code
+- 4 possible bugs in 1 line of code!
 
 </v-click>
 
@@ -371,13 +285,13 @@ Let's analyze a small part of the code of the module production code to see if w
 
 # Test quality
 
-In the previous example, there were also 4 bugs that caused a test to fail:<br/>
+In the previous example, there were also 8 bugs that was detected by a test:<br/>
 
 <br/>
 
 $$
 \begin{aligned}
-\frac{4 \cdot detected}{4 \cdot detected + 8 \cdot undetected} &= \frac{4}{12} &= 0,33 &= 33\%
+\frac{8 \cdot detected}{8 \cdot detected + 4 \cdot undetected} &= \frac{8}{12} &= 0,67 &= 67\%
 \end{aligned}
 $$
 
@@ -389,19 +303,20 @@ A few takeaways:
 
 <v-clicks>
 
-- Test coverage alone is not good enough, although
+- Although tests are not useless,
+  
+- Test coverage alone is not good enough
 
-- Tests are not useless!
+- Test quality can be better
 
-- Test quality can be better, but also:
-
-- No test coverage = no tests at all
+- BUT: -> No test coverage = no tests at all
+  
 </v-clicks>
 
 <!--
 Test quality can be quantified as a percentage of changes found upon changes tested
 
-Turns out that there are 4 changes that was detected by our tests - that we did not cover now.
+Turns out that there are 8 changes that was detected by our tests - that we did not cover now.
 
 [click] What we have learned:
 
@@ -440,7 +355,7 @@ Doing this exercise enables us to:
 </v-click>
 
 <v-click>
-BTW: The overall score for the LeadTime module tests is 67%. <br/><br/>
+BTW: The overall score for the LocationService module tests is 67%. <br/><br/>
 How do I know?
 </v-click>
 
@@ -636,7 +551,7 @@ layout: two-cols
 layout: default
 ---
 
-<iframe src="mutation.html" style="zoom: 0.5; width: 125%; height: 125%; border: none;"></iframe>
+<iframe src="mutation-report.html" style="zoom: 0.5; width: 125%; height: 125%; border: none;"></iframe>
 
 ---
 layout: image-right
